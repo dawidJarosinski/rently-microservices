@@ -1,0 +1,15 @@
+spring:
+  config:
+    activate:
+      on-profile: k8s
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    driver-class-name: org.postgresql.Driver
+
+KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI}
+
+server:
+  port: ${SERVER_PORT}
