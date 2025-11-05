@@ -33,6 +33,22 @@ public class PropertyService {
     private final PropertyImageBlobStorageService propertyImageBlobStorageService;
     private final PropertyImageRepository propertyImageRepository;
 
+    public List<PropertyResponse> findAll() {
+        return propertyRepository.findAll().stream().map((property) -> {
+            var propertyResponse = propertyMapper.toDto(property);
+            propertyResponse.propertyImages().addAll(property.getPropertyImages().stream().map(PropertyImage::getUrl).toList());
+            return propertyResponse;
+        }).toList();
+    }
+
+    public List<PropertyResponse> findAllApproved() {
+        return propertyRepository.findAllApproved().stream().map((property) -> {
+            var propertyResponse = propertyMapper.toDto(property);
+            propertyResponse.propertyImages().addAll(property.getPropertyImages().stream().map(PropertyImage::getUrl).toList());
+            return propertyResponse;
+        }).toList();
+    }
+
     @Transactional
     public PropertyResponse save(Jwt jwt, PropertyRequest request) {
         UserResponse user = userServiceWebClient
@@ -57,7 +73,7 @@ public class PropertyService {
     }
 
     public UploadUrlsResponse uploadUrls(Jwt jwt, String propertyId, PropertyImageRequest request) {
-        Property property = propertyRepository.findById(UUID.fromString(propertyId)).orElseThrow(() -> new ResourceNotFoundException("cant find property"));
+        Property property = propertyRepository.findById(UUID.fromString(propertyId)).orElseThrow(() -> new ResourceNotFoundException("property not found"));
 
         if (!jwt.getClaim("sub").equals(property.getUserId().toString())) {
             throw new AccessDeniedException("unauthorized");
@@ -77,7 +93,7 @@ public class PropertyService {
 
     @Transactional
     public PropertyResponse savePropertyImages(Jwt jwt, String propertyId,PropertyImageUrlsRequest request) {
-        Property property = propertyRepository.findById(UUID.fromString(propertyId)).orElseThrow(() -> new ResourceNotFoundException("cant find property"));
+        Property property = propertyRepository.findById(UUID.fromString(propertyId)).orElseThrow(() -> new ResourceNotFoundException("property not found"));
 
         if (!jwt.getClaim("sub").equals(property.getUserId().toString())) {
             throw new AccessDeniedException("unauthorized");
@@ -91,5 +107,37 @@ public class PropertyService {
         propertyResponse.propertyImages().addAll(request.propertyImages());
 
         return propertyResponse;
+    }
+
+    @Transactional
+    public PropertyResponse approve(String propertyId) {
+        Property property = propertyRepository
+                .findByIdWithAddressAndImages(UUID.fromString(propertyId))
+                .orElseThrow(() -> new ResourceNotFoundException("property not found"));
+        property.setApproved(true);
+
+        propertyRepository.save(property);
+
+        var propertyResponse = propertyMapper.toDto(property);
+        propertyResponse.propertyImages().addAll(property.getPropertyImages().stream().map(PropertyImage::getUrl).toList());
+        return propertyResponse;
+    }
+
+    @Transactional
+    public void decline(String propertyId) {
+        Property property = propertyRepository
+                .findByIdWithAddressAndImages(UUID.fromString(propertyId))
+                .orElseThrow(() -> new ResourceNotFoundException("property not found"));
+        property.setApproved(true);
+
+        propertyRepository.delete(property);
+    }
+
+    public List<PropertyResponse> findPropertiesByApprove(boolean approved) {
+        return propertyRepository.findAllByApproved(approved).stream().map((property) -> {
+            var propertyResponse = propertyMapper.toDto(property);
+            propertyResponse.propertyImages().addAll(property.getPropertyImages().stream().map(PropertyImage::getUrl).toList());
+            return propertyResponse;
+        }).toList();
     }
 }

@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/properties")
 @RequiredArgsConstructor
@@ -41,5 +43,21 @@ public class PropertyController {
             @PathVariable String propertyId,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED).body(propertyService.savePropertyImages(jwt, propertyId, request));
+    }
+
+    @PatchMapping("/{propertyId}/approve")
+    public ResponseEntity<PropertyResponse> approve(@PathVariable("propertyId") String propertyId) {
+        return ResponseEntity.ok(propertyService.approve(propertyId));
+    }
+
+    @PatchMapping("/{propertyId}/decline")
+    public ResponseEntity<PropertyResponse> decline(@PathVariable("propertyId") String propertyId) {
+        propertyService.decline(propertyId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping()
+    public ResponseEntity<List<PropertyResponse>> findAll() {
+        return ResponseEntity.ok(propertyService.findAll());
     }
 }

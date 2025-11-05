@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -46,4 +47,7 @@ public class Property {
     @OneToOne(mappedBy = "property", cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private Address address;
+
+    @OneToMany(mappedBy = "property")
+    List<PropertyImage> propertyImages;
 }
