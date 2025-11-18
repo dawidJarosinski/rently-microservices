@@ -21,10 +21,8 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/books").permitAll()
-                        .requestMatchers("/api/books-half-secured").authenticated()
-                        .requestMatchers("/api/me").authenticated()
-                        .requestMatchers("/api/books-secured").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/bookings/**").authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt

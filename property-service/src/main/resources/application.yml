@@ -10,6 +10,12 @@ spring:
       hibernate.format_sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
   security:
     oauth2:
       resourceserver:
@@ -22,3 +28,6 @@ spring:
           connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
           container-name: property-images
           endpoint: ${AZURE_STORAGE_ENDPOINT}
+
+server:
+  port: ${SERVER_PORT}

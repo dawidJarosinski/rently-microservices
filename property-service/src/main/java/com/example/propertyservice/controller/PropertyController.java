@@ -57,7 +57,12 @@ public class PropertyController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<PropertyResponse>> findAll() {
-        return ResponseEntity.ok(propertyService.findAll());
+    public ResponseEntity<List<PropertyResponse>> findAllByApproved(@RequestParam boolean approved) {
+        return ResponseEntity.ok(propertyService.findPropertiesByApprove(approved));
+    }
+
+    @GetMapping("/{propertyId}")
+    public ResponseEntity<PropertyResponse> findAllById(@PathVariable String propertyId) {
+        return ResponseEntity.ok(propertyService.findPropertyById(propertyId));
     }
 }

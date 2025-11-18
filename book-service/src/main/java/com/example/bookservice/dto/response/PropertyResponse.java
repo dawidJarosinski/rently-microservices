@@ -1,4 +1,4 @@
-package com.example.propertyservice.dto.response;
+package com.example.bookservice.dto.response;
 
 import java.math.BigDecimal;
 import java.util.List;

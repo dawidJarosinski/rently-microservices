@@ -41,6 +41,13 @@ public class PropertyService {
         }).toList();
     }
 
+    public PropertyResponse findPropertyById(String id) {
+        Property property = propertyRepository.findById(UUID.fromString(id)).orElseThrow(() -> new ResourceNotFoundException("wrong property id"));
+        var propertyResponse = propertyMapper.toDto(property);
+        propertyResponse.propertyImages().addAll(property.getPropertyImages().stream().map(PropertyImage::getUrl).toList());
+        return propertyResponse;
+    }
+
     public List<PropertyResponse> findAllApproved() {
         return propertyRepository.findAllApproved().stream().map((property) -> {
             var propertyResponse = propertyMapper.toDto(property);
