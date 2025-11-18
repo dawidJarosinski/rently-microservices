@@ -10,6 +10,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
@@ -25,6 +27,11 @@ public class BookingController {
     @DeleteMapping("/{bookingId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String bookingId, @AuthenticationPrincipal Jwt jwt) {
-        bookingService.delete(jwt, bookingId);
+        bookingService.cancelBooking(jwt, bookingId);
+    }
+
+    @GetMapping()
+    public ResponseEntity<List<BookingResponse>> findAllByUser(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(bookingService.findAllByUser(jwt));
     }
 }

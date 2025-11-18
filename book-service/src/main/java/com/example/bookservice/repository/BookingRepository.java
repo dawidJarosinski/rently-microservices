@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
@@ -16,4 +17,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             @Param("checkIn") LocalDate checkIn,
             @Param("checkOut")LocalDate checkOut,
             @Param("propertyId")UUID propertyId);
+
+    List<Booking> findAllByUserId(UUID userId);
 }

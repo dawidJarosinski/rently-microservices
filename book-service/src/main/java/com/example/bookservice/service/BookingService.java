@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -77,72 +78,56 @@ public class BookingService {
             throw new BadRequestException("too many guests");
         }
 
-        Booking booking = bookingMapper.toEntity(request, user.id());
+        Booking booking = bookingMapper.toEntity(request, user.id(), countFinalPrice(request.checkIn(), request.checkOut(), propertyResponse));
         bookingRepository.save(booking);
 
 ////        tutaj wrzucic rabbita do powiadomien
-        return bookingMapper.toDto(booking, propertyResponse);
+        return bookingMapper.toDto(booking);
     }
 
     @Transactional
-    public void delete(Jwt jwt, String bookingId) {
-        UserResponse user = userServiceWebClient
-                .post()
-                .uri("/api/users/get-or-create")
-                .header("Authorization", "Bearer " + jwt.getTokenValue())
-                .retrieve()
-                .bodyToMono(UserResponse.class)
-                .block();
-        if (user == null) {
-            throw new ResourceNotFoundException("user not found");
-        }
+    public void cancelBooking(Jwt jwt, String bookingId) {
+        UUID currentUserId = UUID.fromString(jwt.getSubject());
 
         Booking booking = bookingRepository.findById(UUID.fromString(bookingId))
-                .orElseThrow(() -> new ResourceNotFoundException("booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
-        if(!booking.getUserId().toString().equals(user.id())) {
-            throw new AccessDeniedException("unauthorized");
+        boolean isGuest = booking.getUserId().equals(currentUserId);
+
+        boolean isHost = false;
+        if (!isGuest) {
+            PropertyResponse property = propertyServiceWebClient
+                    .get()
+                    .uri("/api/properties/" + booking.getPropertyId())
+                    .retrieve()
+                    .bodyToMono(PropertyResponse.class)
+                    .block();
+
+            if (property != null && property.userId().equals(currentUserId.toString())) {
+                isHost = true;
+            }
+        }
+
+        if (!isGuest && !isHost) {
+            throw new AccessDeniedException("you dont have permission to delete this booking");
         }
 
         bookingRepository.delete(booking);
     }
 
-    @Transactional
-    public void deleteByHost(Jwt jwt, String bookingId) {
-        UserResponse user = userServiceWebClient
-                .post()
-                .uri("/api/users/get-or-create")
-                .header("Authorization", "Bearer " + jwt.getTokenValue())
-                .retrieve()
-                .bodyToMono(UserResponse.class)
-                .block();
+    public List<BookingResponse> findAllByUser(Jwt jwt) {
+        UUID currentUserId = UUID.fromString(jwt.getSubject());
 
-        Booking booking = bookingRepository.findById(UUID.fromString(bookingId))
-                .orElseThrow(() -> new ResourceNotFoundException("booking not found"));
+        List<Booking> bookings = bookingRepository.findAllByUserId(currentUserId);
 
-        PropertyResponse propertyResponse = propertyServiceWebClient
-                .get()
-                .uri("/api/properties/" + booking.getPropertyId())
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, res -> {
-                    if (res.statusCode() == HttpStatus.NOT_FOUND) {
-                        return Mono.error(() -> new ResourceNotFoundException("property not found"));
-                    }
-                    return Mono.error(() -> new RuntimeException("web client error: "+ res.statusCode()));
-                })
-                .bodyToMono(PropertyResponse.class)
-                .block();
-        if (propertyResponse == null) {
-            throw new ResourceNotFoundException("property not found");
-        }
-        if (propertyResponse.userId() != user.id()) {
-            throw new AccessDeniedException("you are not able to manage other hosts bookings");
-        }
-
-        bookingRepository.delete(booking);
+        return bookings.stream().map(bookingMapper::toDto).toList();
     }
 
     private boolean checkAvailability(PropertyResponse property, LocalDate checkIn, LocalDate checkOut) {
         return bookingRepository.existsBookingCollisionInDatesAndPropertyId(checkIn, checkOut, UUID.fromString(property.id()));
+    }
+
+    private BigDecimal countFinalPrice(LocalDate checkIn, LocalDate checkOut, PropertyResponse propertyResponse) {
+        return propertyResponse.pricePerNight().multiply(new BigDecimal(ChronoUnit.DAYS.between(checkIn, checkOut)));
     }
 }
