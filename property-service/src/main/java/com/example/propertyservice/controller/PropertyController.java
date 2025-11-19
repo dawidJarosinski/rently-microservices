@@ -65,4 +65,9 @@ public class PropertyController {
     public ResponseEntity<PropertyResponse> findAllById(@PathVariable String propertyId) {
         return ResponseEntity.ok(propertyService.findPropertyById(propertyId));
     }
+
+    @GetMapping("/host/{userId}")
+    public ResponseEntity<List<PropertyResponse>> findAllByHost(@PathVariable String userId) {
+        return ResponseEntity.ok(propertyService.findPropertiesByUserId(userId));
+    }
 }

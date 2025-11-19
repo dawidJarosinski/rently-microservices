@@ -147,4 +147,12 @@ public class PropertyService {
             return propertyResponse;
         }).toList();
     }
+
+    public List<PropertyResponse> findPropertiesByUserId(String userId) {
+        return propertyRepository.findAllByUserId(UUID.fromString(userId)).stream().map(property -> {
+            var propertyResponse = propertyMapper.toDto(property);
+            propertyResponse.propertyImages().addAll(property.getPropertyImages().stream().map(PropertyImage::getUrl).toList());
+            return propertyResponse;
+        }).toList();
+    }
 }

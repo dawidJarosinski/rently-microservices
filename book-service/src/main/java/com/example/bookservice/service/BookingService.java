@@ -13,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,12 +118,40 @@ public class BookingService {
         bookingRepository.delete(booking);
     }
 
-    public List<BookingResponse> findAllByUser(Jwt jwt) {
+    public List<BookingResponse> findAll(Jwt jwt) {
         UUID currentUserId = UUID.fromString(jwt.getSubject());
 
-        List<Booking> bookings = bookingRepository.findAllByUserId(currentUserId);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        return bookings.stream().map(bookingMapper::toDto).toList();
+        List<Booking> bookings;
+
+        boolean isHost = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_HOST"));
+
+        if (isHost) {
+            List<PropertyResponse> propertyResponsesList = propertyServiceWebClient
+                    .get()
+                    .uri("/api/properties/host/" + jwt.getSubject())
+                    .header("Authorization", "Bearer " + jwt.getTokenValue())
+                    .retrieve()
+                    .bodyToFlux(PropertyResponse.class)
+                    .collectList()
+                    .block();
+            if (propertyResponsesList == null) {
+                throw new ResourceNotFoundException("property response list is null");
+            }
+            bookings = bookingRepository.findAllByPropertyIdIn(propertyResponsesList
+                            .stream()
+                            .map(propertyResponse -> UUID.fromString(propertyResponse.id()))
+                            .toList());
+        } else {
+            bookings = bookingRepository.findAllByUserId(currentUserId);
+        }
+
+        return bookings.stream()
+                .map(bookingMapper::toDto)
+                .toList();
     }
 
     private boolean checkAvailability(PropertyResponse property, LocalDate checkIn, LocalDate checkOut) {

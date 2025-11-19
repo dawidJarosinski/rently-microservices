@@ -23,6 +23,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/bookings").authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt

@@ -24,4 +24,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
     @Query("SELECT p FROM Property p LEFT JOIN FETCH p.address LEFT JOIN FETCH p.propertyImages WHERE p.isApproved = :isApproved")
     List<Property> findAllByApproved(@Param("isApproved")boolean isApproved);
+
+    @Query("SELECT p FROM Property p LEFT JOIN FETCH p.address LEFT JOIN FETCH p.propertyImages WHERE p.userId = :userId")
+    List<Property> findAllByUserId(@Param("userId")UUID userId);
 }

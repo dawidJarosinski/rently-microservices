@@ -32,6 +32,6 @@ public class BookingController {
 
     @GetMapping()
     public ResponseEntity<List<BookingResponse>> findAllByUser(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(bookingService.findAllByUser(jwt));
+        return ResponseEntity.ok(bookingService.findAll(jwt));
     }
 }
